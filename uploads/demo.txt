@@ -1,0 +1,14 @@
+some stuff
+
+
+Received file: {
+  fieldname: 'file',
+  originalname: 'demo.txt',
+  encoding: '7bit',
+  mimetype: 'text/plain',
+  destination: 'uploads/',
+  filename: 'demo.txt',
+  path: 'uploads\\demo.txt',
+  size: 0
+}
+Error uploading file: { message: 'Empty file', name: 'Error', http_code: 400 }

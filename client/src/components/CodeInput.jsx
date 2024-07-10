@@ -20,9 +20,13 @@ const CodeInput = ({ onAccept }) => {
     } else {
       alert("Please enter a 4-digit code.");
     }
+  };
 
-
-
+  const handleGet = () => {
+    fetch("/api")
+      .then((response) => response.text())
+      .then((data) => setMessage(data))
+      .catch((error) => console.error("Error:", error));
   };
 
   return (
@@ -40,7 +44,7 @@ const CodeInput = ({ onAccept }) => {
       />
       <button
         type="submit"
-        className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none"
+        className="mt-4 text-white px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none"
       >
         Get 
       </button>

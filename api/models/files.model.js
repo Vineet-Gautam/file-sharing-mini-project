@@ -2,14 +2,18 @@ import mongoose from "mongoose";
 
 const fileSchema = new mongoose.Schema(
   {
-    fileUrls: {
-      type: [String],
+    fileUrl: {
+      type: String,
       required: true,
+    },
+    fileName: {
+      type: String,
     },
     code: {
       type: Number,
       required: true,
     },
+
   },
   {
     timestamps: true,
