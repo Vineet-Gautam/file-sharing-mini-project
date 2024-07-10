@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import upload from "./multer.js";
 import cloudinary from "./cloudinary.js";
-import path from "path";
+import fs from "fs";
 dotenv.config();
 const app = express();
 
@@ -48,6 +48,15 @@ app.post("/api", upload.single("file"), async (req, res) => {
       resource_type: "raw",
       folder: "uploads",
       public_id: file.originalname, // Use original file name as public_id
+    });
+
+    //deleting from local storage
+    fs.unlink(file.path, (err) => {
+      if (err) {
+        console.error("Error deleting local file:", err);
+      } else {
+        console.log("Deleted local file:", file.path);
+      }
     });
 
     // Respond with the Cloudinary result

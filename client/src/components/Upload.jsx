@@ -3,21 +3,31 @@ import { useDropzone } from "react-dropzone";
 
 export default function Upload() {
   const [files, setFiles] = useState([]);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState(null);
 
   const { getRootProps, getInputProps } = useDropzone({
-    multiple: false, // Only accept one file
-    onDrop: (acceptedFiles) => {
-      setFiles(acceptedFiles); // Only keep the last accepted file
+    multiple: false,
+    maxSize: 2 * 1024 * 1024, // 2 MB in bytes
+    onDrop: (acceptedFiles, rejectedFiles) => {
+      if (rejectedFiles.length > 0) {
+        const rejectedFile = rejectedFiles[0];
+        setError(`File ${rejectedFile.name} is too large. Max size is 2 MB.`);
+      } else {
+        setFiles(acceptedFiles);
+        setError(null); // Clear any previous errors
+      }
     },
   });
 
   const handlePost = async () => {
     try {
+      if (error) {
+        throw new Error(error); // Throw error if file size exceeded
+      }
+
       const formData = new FormData();
-      formData.append('file', files[0]); // Assuming only one file is selected
-      // console.log([...formData]); // Check FormData contents
-      console.log("Selected file:", files[0]); // Check if files[0] is correctly populated
+      formData.append("file", files[0]); // Assuming only one file is selected
 
       const response = await fetch("/api", {
         method: "POST",
@@ -25,14 +35,14 @@ export default function Upload() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to upload file');
+        throw new Error("Failed to upload file");
       }
 
       const data = await response.json();
       setMessage(data.message); // Display server response message
     } catch (error) {
-      console.error("Error:", error);
-      setMessage('Error uploading file');
+      console.error("Error:", error.message);
+      setMessage("Error uploading file");
     }
   };
 
@@ -54,18 +64,14 @@ export default function Upload() {
             className=" p-2 my-2 border border-gray-300 rounded shadow-sm flex justify-between items-center"
           >
             {file.name}
-            {/* Uncomment if you implement removeFile function
-            <button
-              onClick={() => removeFile(file.name)}
-              className="ml-4 text-red-600 font-bold"
-            >
-              &times;
-            </button>
-            */}
           </li>
         ))}
       </ul>
-      <button onClick={handlePost} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4">
+      {error && <p className="text-red-600 mt-2">{error}</p>}
+      <button
+        onClick={handlePost}
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4"
+      >
         Upload File
       </button>
       {message && <p className="mt-2">{message}</p>}
