@@ -28,7 +28,7 @@ export default function Upload() {
 
       const formData = new FormData();
       formData.append("file", files[0]); // Assuming only one file is selected
-
+      
       const response = await fetch("/api", {
         method: "POST",
         body: formData,
