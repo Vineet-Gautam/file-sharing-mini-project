@@ -14,11 +14,14 @@ const fileSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-
+    expiresAt: {
+      type: Date,
+      required: true,
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const File = mongoose.model("File", fileSchema);

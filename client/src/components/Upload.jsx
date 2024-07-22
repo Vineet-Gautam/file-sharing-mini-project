@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { useDropzone } from "react-dropzone";
 
-export default function Upload() {
+const Upload = () => {
   const [files, setFiles] = useState([]);
   const [message, setMessage] = useState("");
   const [error, setError] = useState(null);
+  const [code, setCode] = useState(null);
 
   const { getRootProps, getInputProps } = useDropzone({
     multiple: false,
@@ -28,8 +29,8 @@ export default function Upload() {
 
       const formData = new FormData();
       formData.append("file", files[0]); // Assuming only one file is selected
-      
-      const response = await fetch("/api", {
+
+      const response = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
@@ -40,6 +41,7 @@ export default function Upload() {
 
       const data = await response.json();
       setMessage(data.message); // Display server response message
+      setCode(data.code); // Set the generated code
     } catch (error) {
       console.error("Error:", error.message);
       setMessage("Error uploading file");
@@ -47,7 +49,7 @@ export default function Upload() {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4 flex flex-col align-center justify-center">
       <div
         {...getRootProps()}
         className="border-2 border-dashed border-gray-400 p-10 rounded cursor-pointer text-center"
@@ -61,7 +63,7 @@ export default function Upload() {
         {files.map((file, index) => (
           <li
             key={index}
-            className=" p-2 my-2 border border-gray-300 rounded shadow-sm flex justify-between items-center"
+            className="p-2 my-2 border border-gray-300 rounded shadow-sm flex justify-between items-center"
           >
             {file.name}
           </li>
@@ -75,6 +77,9 @@ export default function Upload() {
         Upload File
       </button>
       {message && <p className="mt-2">{message}</p>}
+      {code && <p className="mt-2">Your unique code: {code}</p>}
     </div>
   );
-}
+};
+
+export default Upload;
