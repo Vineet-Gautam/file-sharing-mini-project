@@ -1,13 +1,12 @@
-import tmp from 'tmp';
 import express from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import fs from "fs";
+import path from "path";
+import cron from "node-cron";
 import upload from "./multer.js";
 import cloudinary from "./cloudinary.js";
-import fs from "fs";
 import File from "./models/files.model.js";
-import cron from "node-cron";
-import path from "path";
 
 dotenv.config();
 
@@ -19,7 +18,7 @@ mongoose
     console.log("Connected to database");
   })
   .catch((err) => {
-    console.log("Failed to connect", err);
+    console.log("Failed to connect to database", err);
   });
 
 const __dirname = path.resolve();
@@ -42,34 +41,39 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
       return res.status(400).json({ message: "Empty file" });
     }
 
-    const tmpFilePath = tmp.tmpNameSync();
-    fs.copyFileSync(file.path, tmpFilePath);
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        resource_type: "raw",
+        folder: "uploads",
+        public_id: file.originalname,
+      },
+      async (error, result) => {
+        if (error) {
+          console.error("Error uploading to Cloudinary:", error);
+          return res.status(500).send("Error uploading file to Cloudinary");
+        }
 
-    const result = await cloudinary.uploader.upload(tmpFilePath, {
-      resource_type: "raw",
-      folder: "uploads",
-      public_id: file.originalname,
-    });
+        const fileUrl = result.secure_url;
 
-    fs.unlinkSync(tmpFilePath);
+        const code = await generateUniqueCode();
 
-    const fileUrl = result.secure_url;
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24);
 
-    const code = await generateUniqueCode();
+        const newFile = new File({
+          fileUrl,
+          fileName: file.originalname,
+          code,
+          expiresAt,
+        });
 
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 24);
+        await newFile.save();
 
-    const newFile = new File({
-      fileUrl,
-      fileName: file.originalname,
-      code,
-      expiresAt,
-    });
+        res.status(200).json({ message: "File uploaded successfully", data: newFile, code });
+      }
+    );
 
-    await newFile.save();
-
-    res.status(200).json({ message: "File uploaded successfully", data: newFile, code });
+    stream.end(file.buffer);
   } catch (error) {
     console.error("Error uploading file:", error);
     res.status(500).send("Error uploading file");
