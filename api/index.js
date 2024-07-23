@@ -1,3 +1,4 @@
+import tmp from 'tmp';
 import express from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
@@ -7,7 +8,6 @@ import fs from "fs";
 import File from "./models/files.model.js";
 import cron from "node-cron";
 import path from "path";
-
 
 dotenv.config();
 
@@ -41,21 +41,17 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
     if (!file || file.size === 0) {
       return res.status(400).json({ message: "Empty file" });
     }
-    const fileName = file.originalname;
 
-    const result = await cloudinary.uploader.upload(file.path, {
+    const tmpFilePath = tmp.tmpNameSync();
+    fs.copyFileSync(file.path, tmpFilePath);
+
+    const result = await cloudinary.uploader.upload(tmpFilePath, {
       resource_type: "raw",
       folder: "uploads",
       public_id: file.originalname,
     });
 
-    fs.unlink(file.path, (err) => {
-      if (err) {
-        console.error("Error deleting local file:", err);
-      } else {
-        console.log("Deleted local file:", file.path);
-      }
-    });
+    fs.unlinkSync(tmpFilePath);
 
     const fileUrl = result.secure_url;
 
@@ -66,7 +62,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 
     const newFile = new File({
       fileUrl,
-      fileName,
+      fileName: file.originalname,
       code,
       expiresAt,
     });
@@ -127,8 +123,7 @@ cron.schedule("0 * * * *", async () => {
   }
 });
 
-
 app.use(express.static(path.join(__dirname, "/client/dist")));
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "client", "dist", "index.html"));
-})
+});
